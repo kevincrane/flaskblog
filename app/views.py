@@ -92,7 +92,7 @@ def user(nickname):
 @app.route('/edit', methods=['GET', 'POST'])
 @login_required
 def edit():
-    form = EditForm()
+    form = EditForm(g.user.nickname)
     if form.validate_on_submit():
         g.user.nickname = form.nickname.data
         g.user.about_me = form.about_me.data
@@ -116,3 +116,14 @@ def logout():
 @lm.user_loader
 def load_user(id):
     return User.query.get(int(id))
+
+
+@app.errorhandler(404)
+def internal_error(error):
+    return render_template('404.html'), 404
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return render_template('500.html'), 500
