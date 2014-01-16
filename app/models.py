@@ -1,6 +1,8 @@
 from hashlib import md5
 
-from app import db
+import flask.ext.whooshalchemy as whooshalchemy
+
+from app import db, app
 
 
 ROLE_USER = 0
@@ -42,9 +44,6 @@ class User(db.Model):
     def avatar(self, size):
         return 'http://www.gravatar.com/avatar/' + md5(self.email).hexdigest() + '?d=retro&s=' + str(size)
 
-    def __repr__(self):
-        return '<User %r>' % self.nickname
-
     @staticmethod
     def make_unique_nickname(nickname):
         if User.query.filter_by(nickname=nickname).first() is None:
@@ -74,8 +73,13 @@ class User(db.Model):
         return Post.query.join(followers, (followers.c.followed_id == Post.user_id)).filter(
             followers.c.follower_id == self.id).order_by(Post.timestamp.desc())
 
+    def __repr__(self):
+        return '<User %r>' % self.nickname
+
 
 class Post(db.Model):
+    __searchable__ = ['body']
+
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.String(140))
     timestamp = db.Column(db.DateTime)
@@ -84,3 +88,5 @@ class Post(db.Model):
     def __repr__(self):
         return '<Post %r>' % self.body
 
+
+whooshalchemy.whoosh_index(app, Post)

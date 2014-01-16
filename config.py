@@ -6,6 +6,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 # Database
 SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app.db')
 SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
+WHOOSH_BASE = os.path.join(basedir, 'search.db')
 
 # WTForms
 CSRF_ENABLED = True
@@ -28,3 +29,7 @@ MAIL_PASSWORD = None
 
 # administrator list
 ADMINS = ['kevincrane@gmail.com']
+
+# pagination
+POSTS_PER_PAGE = 3
+MAX_SEARCH_RESULTS = 50

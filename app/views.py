@@ -3,8 +3,9 @@ from flask import render_template, flash, redirect, url_for, session, g, request
 from flask.ext.login import login_user, current_user, login_required, logout_user
 
 from app import app, lm, oid, db
-from app.forms import LoginForm, EditForm
-from app.models import User, ROLE_USER
+from app.forms import LoginForm, EditForm, PostForm, SearchForm
+from app.models import User, ROLE_USER, Post
+from config import POSTS_PER_PAGE, MAX_SEARCH_RESULTS
 
 
 @app.before_request
@@ -14,26 +15,25 @@ def before_request():
         g.user.last_seen = datetime.utcnow()
         db.session.add(g.user)
         db.session.commit()
+        g.search_form = SearchForm()
 
 
-@app.route('/')
-@app.route('/index')
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
+@app.route('/index/<int:page>', methods=['GET', 'POST'])
 @login_required
-def index():
-    user = g.user
-    posts = [
-        {
-            'author': {'nickname': 'Steven'},
-            'body': 'Beautiful day in Seattle!'
-        },
-        {
-            'author': {'nickname': 'Susan'},
-            'body': 'The Avengers movie was so cool!'
-        }
-    ]
+def index(page=1):
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(body=form.post.data, timestamp=datetime.utcnow(), author=g.user)
+        db.session.add(post)
+        db.session.commit()
+        flash('Your post is now live!')
+        return redirect(url_for('index'))
+    posts = g.user.followed_posts().paginate(page, POSTS_PER_PAGE, False)
     return render_template('index.html',
                            title='Home',
-                           user=user,
+                           form=form,
                            posts=posts)
 
 
@@ -76,16 +76,14 @@ def after_login(resp):
 
 
 @app.route('/user/<nickname>')
+@app.route('/user/<nickname>/<int:page>')
 @login_required
-def user(nickname):
+def user(nickname, page=1):
     user = User.query.filter_by(nickname=nickname).first()
     if user is None:
         flash('User ' + nickname + ' not found.')
         return redirect(url_for('index'))
-    posts = [
-        {'author': user, 'body': 'Test post #1'},
-        {'author': user, 'body': 'Test post #2'}
-    ]
+    posts = user.posts.paginate(page, POSTS_PER_PAGE, False)
     return render_template('user.html',
                            user=user,
                            posts=posts)
@@ -147,6 +145,23 @@ def unfollow(nickname):
     db.session.commit()
     flash('You have stopped following ' + nickname + '.')
     return redirect(url_for('user', nickname=nickname))
+
+
+@app.route('/search', methods=['POST'])
+@login_required
+def search():
+    if not g.search_form.validate_on_submit():
+        return redirect(url_for('index'))
+    return redirect(url_for('search_results', query=g.search_form.search.data))
+
+
+@app.route('/search_results/<query>')
+@login_required
+def search_results(query):
+    results = Post.query.whoosh_search(query, MAX_SEARCH_RESULTS).all()
+    return render_template('search_results.html',
+                           query=query,
+                           results=results)
 
 
 @app.route('/logout')
