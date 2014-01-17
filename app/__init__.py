@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask
+from flask.ext.mail import Mail
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.login import LoginManager
 from flask.ext.openid import OpenID
@@ -19,8 +20,16 @@ lm.init_app(app)
 lm.login_view = 'login'
 oid = OpenID(app, os.path.join(basedir, 'tmp'))
 
+# Email Handler
+mail = Mail(app)
+
 # Views and models
 from app import views, models
+
+# Moment.js time handling
+from momentjs import momentjs
+
+app.jinja_env.globals['momentjs'] = momentjs
 
 
 # Email error reporting

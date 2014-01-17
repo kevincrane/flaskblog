@@ -22,10 +22,19 @@ OPENID_PROVIDERS = [
     {'name': 'MyOpenID', 'url': 'https://www.myopenid.com'}]
 
 # mail server settings
-MAIL_SERVER = 'localhost'
-MAIL_PORT = 6969
-MAIL_USERNAME = None
-MAIL_PASSWORD = None
+# MAIL_SERVER = 'localhost'
+# MAIL_PORT = 6969
+# MAIL_USE_TLS = False
+# MAIL_USE_SSL = False
+# MAIL_USERNAME = None
+# MAIL_PASSWORD = None
+
+MAIL_SERVER = 'smtp.gmail.com'
+MAIL_PORT = 465
+MAIL_USE_TLS = False
+MAIL_USE_SSL = True
+MAIL_USERNAME = 'username'
+MAIL_PASSWORD = 'password'
 
 # administrator list
 ADMINS = ['kevincrane@gmail.com']
